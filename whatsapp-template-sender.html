@@ -1,0 +1,1824 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WhatsApp Template Sender</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+      :root {
+        --green: #25d366;
+        --green-d: #128c7e;
+        --teal: #075e54;
+        --bg: #eef1f4;
+        --line: #e3e7ec;
+        --text: #1f2933;
+        --muted: #6b7785;
+        --danger: #d64545;
+        --warn: #c98200;
+        --blue: #2b7de9;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Segoe UI", Roboto, system-ui, sans-serif;
+        font-size: 13px;
+      }
+      .hidden {
+        display: none !important;
+      }
+
+      /* ---------- App shell (single screen) ---------- */
+      .app {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 16px;
+        flex: none;
+      }
+      .topbar h1 {
+        margin: 0;
+        font-size: 18px;
+        color: var(--teal);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .topbar h1 i {
+        font-style: normal;
+        background: var(--green);
+        color: #fff;
+        border-radius: 8px;
+        width: 26px;
+        height: 26px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+      }
+      .api-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .api-bar input {
+        width: 300px;
+        padding: 5px 9px;
+        font-size: 12px;
+      }
+      .grid {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.6fr);
+        gap: 14px;
+        padding: 0 16px 14px;
+      }
+      .left,
+      .right {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .top-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+        gap: 10px;
+        flex: none;
+        align-items: stretch;
+      }
+      .var-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        gap: 0 12px;
+      }
+
+      /* ---------- Cards / inputs ---------- */
+      .card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px 14px;
+        box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05);
+      }
+      .title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 10px;
+      }
+      .step {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--green);
+        color: #fff;
+        font-size: 11px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+      }
+      .field {
+        width: 100%;
+        border: 1px solid #cfd6de;
+        border-radius: 8px;
+        padding: 7px 10px;
+        font-size: 13px;
+        font-family: inherit;
+        background: #fff;
+        outline: none;
+      }
+      .field:focus {
+        border-color: var(--green-d);
+        box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.18);
+      }
+      textarea.field {
+        resize: none;
+      }
+      .hint {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        margin-top: 4px;
+      }
+      .error {
+        color: var(--danger);
+        font-size: 12px;
+        margin: 6px 0 0;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 8px;
+      }
+      .chip {
+        font-size: 11px;
+        padding: 2px 9px;
+        border-radius: 999px;
+        background: #eef2f6;
+        color: #4a5766;
+      }
+      .chip.ok {
+        background: #dcf8c6;
+        color: var(--teal);
+      }
+
+      .tabs {
+        display: flex;
+        background: #eef2f6;
+        border-radius: 9px;
+        padding: 3px;
+        flex: 1;
+      }
+      .tabs button {
+        flex: 1;
+        border: none;
+        background: transparent;
+        padding: 6px 8px;
+        border-radius: 7px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--muted);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .tabs button.active {
+        background: #fff;
+        color: var(--teal);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      .cc-input {
+        display: flex;
+        align-items: center;
+        border: 1px solid #cfd6de;
+        border-radius: 8px;
+        padding: 0 8px;
+        background: #fff;
+        color: var(--muted);
+        flex: none;
+      }
+      .cc-input input {
+        width: 38px;
+        border: none;
+        outline: none;
+        padding: 6px 3px;
+        font-size: 13px;
+      }
+
+      .dropzone {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        text-align: left;
+        padding: 14px 12px;
+        border: 2px dashed #bcc6d1;
+        border-radius: 10px;
+        background: #fafbfc;
+        cursor: pointer;
+      }
+      .dropzone:hover,
+      .dropzone.drag {
+        border-color: var(--green-d);
+        background: #f2fbf6;
+      }
+      .dropzone small {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .file-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #f7f9fb;
+      }
+      .file-info small {
+        display: block;
+        color: var(--muted);
+      }
+      .link-btn {
+        border: none;
+        background: none;
+        color: var(--danger);
+        cursor: pointer;
+        font-size: 12px;
+      }
+      .phone-col {
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .phone-col label {
+        color: var(--muted);
+        white-space: nowrap;
+      }
+
+      .stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+      }
+      .stat {
+        font-size: 12px;
+        padding: 3px 9px;
+        border-radius: 7px;
+      }
+      .stat.good {
+        background: #e3f8ea;
+        color: #136c36;
+      }
+      .stat.bad {
+        background: #fde8e8;
+        color: #a12525;
+      }
+      .stat.warn {
+        background: #fff3d6;
+        color: var(--warn);
+      }
+      .stat.info {
+        background: #e6f0fd;
+        color: #1c5db5;
+      }
+      .stat.gray {
+        background: #eef2f6;
+        color: #4a5766;
+      }
+      .numbers {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 6px;
+        max-height: 24px;
+        overflow: hidden;
+      }
+      .numbers span {
+        background: #dcf8c6;
+        border-radius: 6px;
+        padding: 2px 7px;
+        font-size: 11px;
+      }
+      .numbers .more {
+        background: #eef2f6;
+        color: var(--muted);
+      }
+
+      /* ---------- Fields card (scrolls internally only if needed) ---------- */
+      .fields-card {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .fields-scroll {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        padding-right: 4px;
+      }
+      .group {
+        margin-bottom: 12px;
+      }
+      .group:last-child {
+        margin-bottom: 0;
+      }
+      .group h5 {
+        margin: 0 0 6px;
+        font-size: 11px;
+        color: var(--teal);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .ro {
+        background: #f4f6f8;
+        border: 1px dashed #d5dbe2;
+        border-radius: 8px;
+        padding: 6px 10px;
+        color: #4a5766;
+        font-size: 12px;
+        margin-bottom: 6px;
+        white-space: pre-line;
+        word-break: break-word;
+      }
+      .ro.clamp {
+        max-height: 90px;
+        overflow: auto;
+      }
+      .muted-box {
+        color: var(--muted);
+        text-align: center;
+        padding: 24px 10px;
+        border: 2px dashed var(--line);
+        border-radius: 10px;
+      }
+      .var-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 6px;
+      }
+      .var-label {
+        flex: none;
+        min-width: 42px;
+        text-align: center;
+        font-family: monospace;
+        background: #eef2f6;
+        padding: 6px 4px;
+        border-radius: 7px;
+        font-size: 12px;
+      }
+      .var-row select.src {
+        width: 112px;
+        flex: none;
+      }
+      .btn-item {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 10px;
+        margin-bottom: 6px;
+        background: #fcfdfe;
+      }
+      .btn-name {
+        font-weight: 600;
+        font-size: 12px;
+        margin-bottom: 2px;
+      }
+      .btn-item .hint {
+        word-break: break-all;
+        margin: 0 0 6px;
+      }
+
+      .send-btn {
+        width: 100%;
+        border: none;
+        border-radius: 10px;
+        padding: 11px 14px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #fff;
+        background: var(--green);
+        cursor: pointer;
+      }
+      .send-btn:hover:not(:disabled) {
+        background: #1ebc5b;
+      }
+      .send-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .send-card {
+        padding: 10px 14px;
+        flex: none;
+      }
+      .send-card .hint {
+        text-align: center;
+        margin-top: 5px;
+        min-height: 14px;
+      }
+
+      /* ---------- Right panel ---------- */
+      .right-card {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 10px 12px;
+      }
+      .rtabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 10px;
+        flex: none;
+      }
+      .rtabs button {
+        flex: 1;
+        border: 1px solid var(--line);
+        background: #f7f9fb;
+        border-radius: 9px;
+        padding: 8px 10px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+      }
+      .rtabs button.active {
+        background: var(--teal);
+        border-color: var(--teal);
+        color: #fff;
+      }
+      .tab-badge {
+        font-size: 11px;
+        padding: 1px 8px;
+        border-radius: 999px;
+        background: #fff;
+        color: var(--teal);
+        font-weight: 700;
+      }
+      .tab-badge.sending {
+        background: #ffe9b8;
+        color: #8a5a00;
+      }
+      .tab-badge.fail {
+        background: #fde8e8;
+        color: #a12525;
+      }
+      .view {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* preview */
+      .pv-nav {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 8px;
+        flex: none;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .pv-nav button {
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 7px;
+        width: 28px;
+        height: 26px;
+        cursor: pointer;
+      }
+      .pv-wrap {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        justify-content: center;
+      }
+      .phone {
+        width: 100%;
+        max-width: 270px;
+        height: 100%;
+        max-height: 480px;
+        display: flex;
+        flex-direction: column;
+        border-radius: 22px;
+        overflow: hidden;
+        border: 6px solid #1f2933;
+        background: #000;
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+      }
+      .phone-top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--teal);
+        color: #fff;
+        padding: 9px 14px;
+        flex: none;
+      }
+      .phone-top small {
+        display: block;
+        opacity: 0.75;
+        font-size: 11px;
+      }
+      .avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #fff;
+        color: var(--teal);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .chat-bg {
+        flex: 1;
+        min-height: 0;
+        background: #efeae2;
+        background-image: radial-gradient(
+          rgba(0, 0, 0, 0.035) 1px,
+          transparent 1px
+        );
+        background-size: 14px 14px;
+        overflow-y: auto;
+        padding: 12px 10px;
+      }
+      .day {
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .day span {
+        background: #e1f2fb;
+        color: #54656f;
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 7px;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
+      }
+      .bubble {
+        background: #fff;
+        border-radius: 0 10px 10px 10px;
+        padding: 5px 5px 7px;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.13);
+        max-width: 94%;
+        line-height: 1.4;
+        font-size: 12px;
+      }
+      .bubble .media {
+        width: 100%;
+        max-height: 130px;
+        object-fit: cover;
+        border-radius: 7px;
+        display: block;
+        margin-bottom: 5px;
+        background: #dfe5e8;
+      }
+      .bubble .ph {
+        height: 110px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+        border-radius: 7px;
+        background: #dfe5e8;
+        margin-bottom: 5px;
+      }
+      .bubble .doc {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        background: #f0f2f5;
+        border-radius: 7px;
+        padding: 9px;
+        margin-bottom: 5px;
+      }
+      .bubble .h-text {
+        font-weight: 700;
+        padding: 2px 6px 4px;
+      }
+      .bubble .b-text {
+        padding: 2px 6px;
+        white-space: pre-line;
+        word-break: break-word;
+      }
+      .bubble .f-text {
+        padding: 4px 6px 0;
+        font-size: 12px;
+        color: #7b8794;
+      }
+      .bubble .time {
+        text-align: right;
+        font-size: 11px;
+        color: #8696a0;
+        padding: 2px 6px 0;
+      }
+      .var {
+        background: #fff3d6;
+        color: var(--warn);
+        border-radius: 4px;
+        padding: 0 3px;
+        font-family: monospace;
+        font-size: 12px;
+      }
+      .var.filled {
+        background: #dcf8c6;
+        color: #0d5a2b;
+        font-family: inherit;
+        font-size: inherit;
+      }
+      .b-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        margin-top: 3px;
+        max-width: 94%;
+      }
+      .b-btn {
+        background: #fff;
+        color: #00a5f4;
+        text-align: center;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-weight: 500;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.13);
+      }
+      .empty-box {
+        text-align: center;
+        color: var(--muted);
+        border: 2px dashed var(--line);
+        border-radius: 14px;
+        padding: 40px 16px;
+        margin: auto 0;
+      }
+      .empty-box div {
+        font-size: 32px;
+      }
+
+      /* status */
+      .progress {
+        height: 7px;
+        background: #e8ecf0;
+        border-radius: 999px;
+        margin: 8px 0;
+        overflow: hidden;
+        flex: none;
+      }
+      .progress .bar {
+        height: 100%;
+        background: var(--green);
+        width: 0;
+        transition: width 0.3s;
+      }
+      .st-top {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        flex: none;
+      }
+      .st-filter {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 8px;
+        flex: none;
+        flex-wrap: wrap;
+      }
+      .st-filter button {
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 999px;
+        padding: 3px 11px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .st-filter button.active {
+        background: var(--teal);
+        border-color: var(--teal);
+        color: #fff;
+      }
+      .st-filter .sp {
+        margin-left: auto;
+      }
+      .ghost-btn {
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 8px;
+        padding: 5px 10px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .table-wrap {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      th,
+      td {
+        padding: 7px 10px;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+      }
+      th {
+        position: sticky;
+        top: 0;
+        background: #f7f9fb;
+        z-index: 1;
+      }
+      td.muted {
+        color: var(--muted);
+        word-break: break-word;
+      }
+      .badge {
+        padding: 2px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        white-space: nowrap;
+      }
+      .badge.sent {
+        background: #e3f8ea;
+        color: #136c36;
+      }
+      .badge.failed {
+        background: #fde8e8;
+        color: #a12525;
+      }
+      .badge.pending {
+        background: #eef2f6;
+        color: #4a5766;
+      }
+      .badge.sending {
+        background: #ffe9b8;
+        color: #8a5a00;
+      }
+
+      /* ---------- Small screens: normal scrolling page ---------- */
+      @media (max-width: 900px) {
+        .app {
+          height: auto;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .right-card {
+          min-height: 600px;
+        }
+        .phone {
+          height: 560px;
+        }
+        .api-bar input {
+          width: 180px;
+        }
+        .topbar {
+          flex-wrap: wrap;
+        }
+        .fields-scroll {
+          overflow: visible;
+        }
+        .top-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <h1><i>💬</i> WhatsApp Template Sender</h1>
+        <div class="api-bar">
+          <label>API</label><input id="apiBase" class="field" />
+        </div>
+      </header>
+
+      <main class="grid">
+        <!-- ================= LEFT ================= -->
+        <section class="left">
+          <div class="top-grid">
+            <!-- 1. Template -->
+            <div class="card">
+              <div class="title"><span class="step">1</span> Template</div>
+              <div class="row">
+                <select id="tplSelect" class="field">
+                  <option value="">Loading templates...</option>
+                </select>
+              </div>
+              <div id="tplChips" class="chips"></div>
+              <p id="tplError" class="error hidden"></p>
+            </div>
+
+            <!-- 2. Recipients -->
+            <div class="card">
+              <div class="title">
+                <span class="step">2</span> Mobile Numbers
+              </div>
+              <div class="row" style="margin-bottom: 8px">
+                <div class="tabs">
+                  <button id="tabManual" class="active" type="button">
+                    ✍ Type / Paste
+                  </button>
+                  <button id="tabFile" type="button">
+                    📁 Excel / CSV / JSON
+                  </button>
+                </div>
+                <div class="cc-input" title="Country code">
+                  +<input id="cc" value="91" maxlength="4" />
+                </div>
+              </div>
+
+              <div id="manualBox">
+                <textarea
+                  id="manualNumbers"
+                  class="field"
+                  rows="2"
+                  placeholder="9876543210, 9123456780  (comma or new line separated)"
+                ></textarea>
+              </div>
+
+              <div id="fileBox" class="hidden">
+                <label id="dropzone" class="dropzone">
+                  <input
+                    id="fileInput"
+                    type="file"
+                    accept=".xlsx,.xls,.csv,.json,.txt"
+                    hidden
+                  />
+                  <div style="font-size: 22px; color: var(--green-d)">⬆</div>
+                  <div>
+                    <strong>Choose or drag a file</strong> (.xlsx .xls .csv
+                    .json .txt)
+                    <small
+                      >First row must contain column names (phone, name,
+                      ...)</small
+                    >
+                  </div>
+                </label>
+                <div id="fileInfo" class="file-info hidden">
+                  <div>
+                    <strong id="fileName"></strong><small id="fileMeta"></small>
+                  </div>
+                  <button id="fileRemove" class="link-btn" type="button">
+                    Remove
+                  </button>
+                </div>
+                <div id="phoneColRow" class="phone-col hidden">
+                  <label>Phone column</label>
+                  <select id="phoneCol" class="field"></select>
+                </div>
+                <p id="fileError" class="error hidden"></p>
+              </div>
+
+              <div id="stats" class="stats"></div>
+              <div id="numbers" class="numbers"></div>
+            </div>
+          </div>
+
+          <!-- 3. Fields -->
+          <div class="card fields-card">
+            <div class="title">
+              <span class="step">3</span> Template Fields
+              <small style="color: var(--muted); font-weight: 400"
+                >(Header · Body · Footer · Buttons)</small
+              >
+            </div>
+            <div id="fields" class="fields-scroll"></div>
+          </div>
+
+          <!-- Send -->
+          <div class="card send-card">
+            <button id="sendBtn" class="send-btn" type="button" disabled>
+              🚀 Send
+            </button>
+            <small id="sendHint" class="hint"></small>
+          </div>
+        </section>
+
+        <!-- ================= RIGHT ================= -->
+        <section class="right">
+          <div class="card right-card">
+            <div class="rtabs">
+              <button id="rtPreview" class="active" type="button">
+                📱 Preview
+              </button>
+              <button id="rtStatus" type="button">
+                📊 Send Status
+                <span id="stBadge" class="tab-badge hidden"></span>
+              </button>
+            </div>
+
+            <!-- Preview view -->
+            <div id="viewPreview" class="view">
+              <div id="pvNav" class="pv-nav hidden">
+                <button id="pvPrev" type="button">‹</button>
+                <span id="pvLabel"></span>
+                <button id="pvNext" type="button">›</button>
+              </div>
+              <div id="previewEmpty" class="empty-box">
+                <div>💬</div>
+                <p>
+                  Select a template to see a live WhatsApp-style preview here.
+                </p>
+              </div>
+              <div id="previewWrap" class="pv-wrap hidden">
+                <div class="phone">
+                  <div class="phone-top">
+                    <div class="avatar">B</div>
+                    <div>
+                      <strong>Business</strong><small>Template preview</small>
+                    </div>
+                  </div>
+                  <div class="chat-bg" id="preview"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Status view -->
+            <div id="viewStatus" class="view hidden">
+              <div id="stTop" class="st-top"></div>
+              <div class="progress"><div id="bar" class="bar"></div></div>
+              <div class="st-filter" id="stFilter">
+                <button data-f="all" class="active">All</button>
+                <button data-f="sent">Sent</button>
+                <button data-f="failed">Failed</button>
+                <button data-f="pending">Pending</button>
+                <span class="sp"></span>
+                <button id="dlAll" class="ghost-btn" type="button">
+                  ⬇ CSV
+                </button>
+                <button id="dlFail" class="ghost-btn hidden" type="button">
+                  ⬇ Failed
+                </button>
+                <button id="stClear" class="ghost-btn hidden" type="button">
+                  Clear
+                </button>
+              </div>
+              <div id="stEmpty" class="empty-box">
+                <div>📭</div>
+                <p>
+                  Nothing sent yet. Live delivery status will appear here once
+                  you send.
+                </p>
+              </div>
+              <div id="stTable" class="table-wrap hidden">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Number</th>
+                      <th>Status</th>
+                      <th>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reportBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      /* =====================================================================
+   CONFIG — API base URL (can also be changed from the API box in the header)
+   Templates: GET  {API_BASE}/templates
+   Send     : POST {API_BASE}/send-simple-template
+   ===================================================================== */
+      const DEFAULT_API_BASE = "http://localhost:8800/whatsAppDemo/api";
+      const CHUNK_SIZE = 25; // numbers per request
+      const MAX_ROWS_SHOWN = 1000; // max rows rendered in the status table
+
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) =>
+        String(s ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+
+      const S = {
+        templates: [],
+        tpl: null,
+        mode: "manual",
+        cc: "91",
+        rows: [],
+        cols: [],
+        phoneCol: "",
+        fileName: "",
+        recipients: [],
+        invalid: 0,
+        dup: 0,
+        header: [],
+        body: [],
+        buttons: [],
+        headerUrl: "",
+        previewIdx: 0,
+        results: [],
+        sending: false,
+        filter: "all",
+        tab: "preview",
+      };
+
+      /* ---------- API base ---------- */
+      $("apiBase").value =
+        localStorage.getItem("wa_api_base") || DEFAULT_API_BASE;
+      $("apiBase").addEventListener("change", () => {
+        localStorage.setItem("wa_api_base", $("apiBase").value.trim());
+        loadTemplates();
+      });
+      const api = () => $("apiBase").value.trim().replace(/\/$/, "");
+
+      /* ---------- Templates ---------- */
+      async function loadTemplates() {
+        $("tplError").classList.add("hidden");
+        $("tplSelect").innerHTML =
+          '<option value="">Loading templates...</option>';
+        try {
+          const res = await fetch(api() + "/templates");
+          const data = await res.json();
+          // only APPROVED templates can be sent
+          S.templates = (data.templates || []).filter(
+            (t) => !t.status || t.status === "APPROVED",
+          );
+          renderTemplateOptions();
+        } catch (e) {
+          $("tplSelect").innerHTML = '<option value="">Failed to load</option>';
+          $("tplError").textContent =
+            "Could not load templates: " +
+            e.message +
+            " (check the API URL / CORS)";
+          $("tplError").classList.remove("hidden");
+        }
+      }
+      function renderTemplateOptions() {
+        const list = S.templates;
+        $("tplSelect").innerHTML =
+          '<option value="">Select a template</option>' +
+          list
+            .map(
+              (t) =>
+                `<option value="${esc(t.template_name)}|${esc(t.language)}" ${S.tpl && S.tpl.template_name === t.template_name && S.tpl.language === t.language ? "selected" : ""}>${esc(t.template_name)} (${esc(t.language)})</option>`,
+            )
+            .join("");
+      }
+      $("tplSelect").addEventListener("change", () => {
+        const [name, lang] = $("tplSelect").value.split("|");
+        S.tpl =
+          S.templates.find(
+            (t) => t.template_name === name && t.language === lang,
+          ) || null;
+        onTemplateChange();
+      });
+
+      const comp = (type) =>
+        (S.tpl?.components || []).find((c) => c.type === type);
+      const headerFormat = () => comp("HEADER")?.format || "";
+      const needsMedia = () =>
+        ["IMAGE", "VIDEO", "DOCUMENT"].includes(headerFormat());
+
+      // "{{1}} ... {{2}}" -> unique placeholders sorted by number
+      function extractVars(text) {
+        const f = Array.from(new Set((text || "").match(/{{\d+}}/g) || []));
+        return f.sort(
+          (a, b) =>
+            parseInt(a.replace(/\D/g, ""), 10) -
+            parseInt(b.replace(/\D/g, ""), 10),
+        );
+      }
+      const mkVar = (label) => ({
+        label,
+        source: S.mode === "file" && S.cols.length ? "column" : "static",
+        value: "",
+      });
+
+      function onTemplateChange() {
+        S.header = [];
+        S.body = [];
+        S.buttons = [];
+        S.headerUrl = "";
+        S.previewIdx = 0;
+        if (S.tpl) {
+          S.body = extractVars(comp("BODY")?.text).map(mkVar);
+          if (headerFormat() === "TEXT")
+            S.header = extractVars(comp("HEADER")?.text).map(mkVar);
+          (comp("BUTTONS")?.buttons || []).forEach((btn, idx) => {
+            if (btn.type === "URL" && btn.url) {
+              const ph = extractVars(btn.url);
+              if (ph.length)
+                S.buttons.push({
+                  index: idx,
+                  text: btn.text,
+                  url: btn.url,
+                  vars: ph.map(mkVar),
+                });
+            }
+          });
+          $("tplChips").innerHTML =
+            `<span class="chip">${esc(S.tpl.category)}</span><span class="chip">${esc(S.tpl.language)}</span>` +
+            (S.tpl.status
+              ? `<span class="chip ok">${esc(S.tpl.status)}</span>`
+              : "") +
+            (needsMedia()
+              ? `<span class="chip">Header: ${esc(headerFormat())}</span>`
+              : "");
+        } else {
+          $("tplChips").innerHTML = "";
+        }
+        renderFields();
+        renderPreview();
+        validate();
+      }
+
+      /* ---------- Recipients ---------- */
+      function setMode(mode) {
+        S.mode = mode;
+        $("tabManual").classList.toggle("active", mode === "manual");
+        $("tabFile").classList.toggle("active", mode === "file");
+        $("manualBox").classList.toggle("hidden", mode !== "manual");
+        $("fileBox").classList.toggle("hidden", mode !== "file");
+        allVars().forEach((v) => {
+          if (mode === "manual" && v.source === "column") {
+            v.source = "static";
+            v.value = "";
+          }
+          if (mode === "file" && S.cols.length && !v.value) v.source = "column";
+        });
+        rebuildRecipients();
+        renderFields();
+      }
+      $("tabManual").onclick = () => setMode("manual");
+      $("tabFile").onclick = () => setMode("file");
+      $("manualNumbers").addEventListener("input", rebuildRecipients);
+      $("cc").addEventListener("input", () => {
+        S.cc = $("cc").value.replace(/\D/g, "");
+        rebuildRecipients();
+      });
+
+      // 10 digits -> add country code, 11 digits starting with 0 -> drop the 0, 11-15 digits -> as is
+      function normalizePhone(raw) {
+        let d = String(raw ?? "").replace(/\D/g, "");
+        if (!d) return null;
+        d = d.replace(/^00/, "");
+        const cc = S.cc || "91";
+        if (d.length === 10) return cc + d;
+        if (d.length === 11 && d.startsWith("0")) return cc + d.slice(1);
+        if (d.length >= 11 && d.length <= 15) return d;
+        return null;
+      }
+
+      function rebuildRecipients() {
+        const seen = new Set();
+        const out = [];
+        let invalid = 0,
+          dup = 0;
+        const add = (raw, row = {}) => {
+          const p = normalizePhone(raw);
+          if (!p) {
+            invalid++;
+            return;
+          }
+          if (seen.has(p)) {
+            dup++;
+            return;
+          }
+          seen.add(p);
+          out.push({ phone: p, row });
+        };
+        if (S.mode === "manual") {
+          $("manualNumbers")
+            .value.split(/[\n,;]+/)
+            .map((t) => t.trim())
+            .filter(Boolean)
+            .forEach((t) => add(t));
+        } else if (S.phoneCol) {
+          S.rows.forEach((r) => add(r[S.phoneCol], r));
+        }
+        S.recipients = out;
+        S.invalid = invalid;
+        S.dup = dup;
+        if (S.previewIdx >= out.length) S.previewIdx = 0;
+
+        $("stats").innerHTML =
+          out.length || invalid || dup
+            ? `<span class="stat good"><b>${out.length}</b> valid</span>` +
+              (invalid
+                ? `<span class="stat bad"><b>${invalid}</b> invalid</span>`
+                : "") +
+              (dup
+                ? `<span class="stat warn"><b>${dup}</b> duplicate</span>`
+                : "")
+            : "";
+        $("numbers").innerHTML =
+          out
+            .slice(0, 6)
+            .map((r) => `<span>${r.phone}</span>`)
+            .join("") +
+          (out.length > 6
+            ? `<span class="more">+${out.length - 6} more</span>`
+            : "");
+        renderPreview();
+        validate();
+      }
+
+      async function parseFile(file) {
+        const ext = file.name.split(".").pop().toLowerCase();
+        if (ext === "json") {
+          const data = JSON.parse(await file.text());
+          const arr = Array.isArray(data)
+            ? data
+            : Object.values(data || {}).find(Array.isArray) || [];
+          return arr.map((x) =>
+            x !== null && typeof x === "object" ? x : { phone: String(x) },
+          );
+        }
+        if (ext === "txt")
+          return (await file.text())
+            .split(/[\s,;]+/)
+            .filter(Boolean)
+            .map((p) => ({ phone: p }));
+        if (["xlsx", "xls", "csv"].includes(ext)) {
+          const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+          return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {
+            defval: "",
+            raw: false,
+          });
+        }
+        throw new Error(
+          "Only .xlsx, .xls, .csv, .json or .txt files are allowed",
+        );
+      }
+
+      async function handleFile(file) {
+        $("fileError").classList.add("hidden");
+        try {
+          const rows = await parseFile(file);
+          if (!rows.length) throw new Error("No data found in the file");
+          const set = new Set();
+          rows
+            .slice(0, 200)
+            .forEach((r) => Object.keys(r).forEach((k) => set.add(k)));
+          S.rows = rows;
+          S.cols = Array.from(set);
+          S.fileName = file.name;
+          S.phoneCol =
+            S.cols.find((c) =>
+              /phone|mobile|mob|whatsapp|contact|number|^no$/i.test(c),
+            ) ||
+            S.cols[0] ||
+            "";
+          $("fileName").textContent = file.name;
+          $("fileMeta").textContent =
+            `${rows.length} rows · ${S.cols.length} columns`;
+          $("dropzone").classList.add("hidden");
+          $("fileInfo").classList.remove("hidden");
+          $("phoneCol").innerHTML = S.cols
+            .map(
+              (c) =>
+                `<option ${c === S.phoneCol ? "selected" : ""}>${esc(c)}</option>`,
+            )
+            .join("");
+          $("phoneColRow").classList.remove("hidden");
+          allVars().forEach((v) => {
+            if (!v.value) v.source = "column";
+          });
+          rebuildRecipients();
+          renderFields();
+        } catch (e) {
+          $("fileError").textContent = e.message || "Could not read the file";
+          $("fileError").classList.remove("hidden");
+        }
+      }
+      $("fileInput").addEventListener("change", (e) => {
+        const f = e.target.files[0];
+        if (f) handleFile(f);
+        e.target.value = "";
+      });
+      ["dragover", "dragenter"].forEach((ev) =>
+        $("dropzone").addEventListener(ev, (e) => {
+          e.preventDefault();
+          $("dropzone").classList.add("drag");
+        }),
+      );
+      ["dragleave", "drop"].forEach((ev) =>
+        $("dropzone").addEventListener(ev, (e) => {
+          e.preventDefault();
+          $("dropzone").classList.remove("drag");
+        }),
+      );
+      $("dropzone").addEventListener("drop", (e) => {
+        const f = e.dataTransfer.files[0];
+        if (f) handleFile(f);
+      });
+      $("fileRemove").onclick = () => {
+        S.rows = [];
+        S.cols = [];
+        S.phoneCol = "";
+        S.fileName = "";
+        $("fileInfo").classList.add("hidden");
+        $("phoneColRow").classList.add("hidden");
+        $("dropzone").classList.remove("hidden");
+        allVars().forEach((v) => {
+          v.source = "static";
+          v.value = "";
+        });
+        rebuildRecipients();
+        renderFields();
+      };
+      $("phoneCol").addEventListener("change", () => {
+        S.phoneCol = $("phoneCol").value;
+        rebuildRecipients();
+      });
+
+      /* ---------- Fields (header / body / footer / buttons) ---------- */
+      const allVars = () => [
+        ...S.header,
+        ...S.body,
+        ...S.buttons.flatMap((g) => g.vars),
+      ];
+      const fileMode = () => S.mode === "file" && S.cols.length > 0;
+      const effSource = (v) => (fileMode() ? v.source : "static");
+      const BTN_ICON = {
+        URL: "🔗",
+        PHONE_NUMBER: "📞",
+        COPY_CODE: "📋",
+        QUICK_REPLY: "↩",
+      };
+
+      function varRowHtml(v, ref) {
+        const label = `<span class="var-label">${esc(v.label)}</span>`;
+        if (!fileMode()) {
+          return `<div class="var-row">${label}<input class="field" data-ref="${ref}" data-kind="value" value="${esc(v.value)}" placeholder="Enter value..." /></div>`;
+        }
+        const srcSel = `<select class="field src" data-ref="${ref}" data-kind="source">
+      <option value="column" ${v.source === "column" ? "selected" : ""}>File column</option>
+      <option value="static" ${v.source === "static" ? "selected" : ""}>Fixed text</option></select>`;
+        const val =
+          v.source === "column"
+            ? `<select class="field" data-ref="${ref}" data-kind="value"><option value="">— select column —</option>${S.cols.map((c) => `<option ${c === v.value ? "selected" : ""}>${esc(c)}</option>`).join("")}</select>`
+            : `<input class="field" data-ref="${ref}" data-kind="value" value="${esc(v.value)}" placeholder="Enter value..." />`;
+        return `<div class="var-row">${label}${srcSel}${val}</div>`;
+      }
+
+      function renderFields() {
+        if (!S.tpl) {
+          $("fields").innerHTML =
+            '<div class="muted-box">Select a template above to get started.</div>';
+          return;
+        }
+        const h = comp("HEADER"),
+          b = comp("BODY"),
+          f = comp("FOOTER"),
+          bt = comp("BUTTONS");
+        let html = "";
+
+        if (h) {
+          html += `<div class="group"><h5>Header · ${esc(h.format)}</h5>`;
+          if (needsMedia()) {
+            html += `<input class="field" data-ref="media" value="${esc(S.headerUrl)}" placeholder="https://... public ${esc(h.format.toLowerCase())} URL" />
+               <small class="hint">Public HTTPS URL (must open without login)</small>`;
+          } else if (h.format === "TEXT") {
+            html += `<div class="ro">${esc(h.text)}</div>`;
+            html += S.header.length
+              ? '<div class="var-grid">' +
+                S.header.map((v, i) => varRowHtml(v, `h:${i}`)).join("") +
+                "</div>"
+              : '<small class="hint">No variables</small>';
+          } else {
+            html += `<div class="ro">${esc(h.format)} header — no input required</div>`;
+          }
+          html += "</div>";
+        }
+
+        if (b) {
+          html +=
+            `<div class="group"><h5>Body</h5><div class="ro clamp">${esc(b.text)}</div>` +
+            (S.body.length
+              ? '<div class="var-grid">' +
+                S.body.map((v, i) => varRowHtml(v, `b:${i}`)).join("") +
+                "</div>"
+              : '<small class="hint">This template has no variables</small>') +
+            "</div>";
+        }
+
+        if (f)
+          html += `<div class="group"><h5>Footer</h5><div class="ro">${esc(f.text)}</div><small class="hint">The footer is fixed and cannot be edited</small></div>`;
+
+        if (bt?.buttons?.length) {
+          html += '<div class="group"><h5>Buttons</h5>';
+          bt.buttons.forEach((btn, idx) => {
+            const gi = S.buttons.findIndex((x) => x.index === idx);
+            if (gi >= 0) {
+              html +=
+                `<div class="btn-item"><div class="btn-name">${BTN_ICON.URL} ${esc(btn.text)}</div><small class="hint">${esc(btn.url)}</small>` +
+                S.buttons[gi].vars
+                  .map((v, i) => varRowHtml(v, `u:${gi}:${i}`))
+                  .join("") +
+                "</div>";
+            } else {
+              html += `<div class="btn-item"><div class="btn-name">${BTN_ICON[btn.type] || "•"} ${esc(btn.text)}</div><small class="hint" style="margin:0">${esc(btn.type)}${btn.url ? " · " + esc(btn.url) : ""}${btn.phone_number ? " · " + esc(btn.phone_number) : ""}</small></div>`;
+            }
+          });
+          html += "</div>";
+        }
+        $("fields").innerHTML = html;
+      }
+
+      function varByRef(ref) {
+        const p = ref.split(":");
+        if (p[0] === "h") return S.header[+p[1]];
+        if (p[0] === "b") return S.body[+p[1]];
+        return S.buttons[+p[1]].vars[+p[2]];
+      }
+      $("fields").addEventListener("input", (e) => {
+        const t = e.target;
+        if (!t.dataset.ref) return;
+        if (t.dataset.ref === "media") {
+          S.headerUrl = t.value;
+          renderPreview();
+          validate();
+          return;
+        }
+        if (t.dataset.kind !== "value" || t.tagName !== "INPUT") return;
+        varByRef(t.dataset.ref).value = t.value;
+        renderPreview();
+        validate();
+      });
+      $("fields").addEventListener("change", (e) => {
+        const t = e.target;
+        if (!t.dataset.ref || t.dataset.ref === "media") return;
+        const v = varByRef(t.dataset.ref);
+        if (t.dataset.kind === "source") {
+          v.source = t.value;
+          v.value = "";
+          renderFields();
+        } else if (t.tagName === "SELECT") {
+          v.value = t.value;
+        }
+        renderPreview();
+        validate();
+      });
+
+      function sample(v) {
+        if (!v) return "";
+        if (effSource(v) === "column")
+          return String(
+            (S.recipients[S.previewIdx]?.row || {})[v.value] ?? "",
+          ).trim();
+        return (v.value || "").trim();
+      }
+      function renderText(text, vars) {
+        let out = esc(text || "");
+        out = out.replace(/\{\{(\d+)\}\}/g, (_m, n) => {
+          const label = `{{${n}}}`;
+          const val = sample(vars.find((v) => v.label === label));
+          return val
+            ? `<span class="var filled">${esc(val)}</span>`
+            : `<span class="var">${label}</span>`;
+        });
+        return out
+          .replace(/\*([^*\n]+)\*/g, "<strong>$1</strong>")
+          .replace(/_([^_\n]+)_/g, "<em>$1</em>")
+          .replace(/~([^~\n]+)~/g, "<s>$1</s>");
+      }
+
+      function renderPreview() {
+        const has = !!S.tpl;
+        $("previewEmpty").classList.toggle("hidden", has);
+        $("previewWrap").classList.toggle("hidden", !has);
+
+        const nav = has && fileMode() && S.recipients.length > 1;
+        $("pvNav").classList.toggle("hidden", !nav);
+        if (nav) {
+          const r = S.recipients[S.previewIdx];
+          $("pvLabel").textContent =
+            `Row ${S.previewIdx + 1} / ${S.recipients.length} · ${r.phone}`;
+        }
+        if (!has) return;
+
+        const h = comp("HEADER"),
+          b = comp("BODY"),
+          f = comp("FOOTER"),
+          btns = comp("BUTTONS");
+        const url = S.headerUrl.trim() || h?.example?.header_handle?.[0] || "";
+        let html =
+          '<div class="day"><span>Today</span></div><div class="bubble">';
+        if (h) {
+          if (h.format === "IMAGE")
+            html += url
+              ? `<img class="media" src="${esc(url)}" alt="" />`
+              : '<div class="ph">🖼 Image preview</div>';
+          else if (h.format === "VIDEO")
+            html += url
+              ? `<video class="media" src="${esc(url)}" controls muted></video>`
+              : '<div class="ph">🎬 Video preview</div>';
+          else if (h.format === "DOCUMENT")
+            html +=
+              '<div class="doc"><span style="font-size:24px">📄</span><div><strong>Document</strong><br><small style="color:var(--muted)">PDF / Document</small></div></div>';
+          else if (h.format === "TEXT")
+            html += `<div class="h-text">${renderText(h.text, S.header)}</div>`;
+        }
+        if (b)
+          html += `<div class="b-text">${renderText(b.text, S.body)}</div>`;
+        if (f) html += `<div class="f-text">${esc(f.text)}</div>`;
+        html += `<div class="time">${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} ✓✓</div></div>`;
+        if (btns?.buttons?.length) {
+          html +=
+            '<div class="b-buttons">' +
+            btns.buttons
+              .map(
+                (x) =>
+                  `<div class="b-btn">${BTN_ICON[x.type] || "•"} ${esc(x.text)}</div>`,
+              )
+              .join("") +
+            "</div>";
+        }
+        $("preview").innerHTML = html;
+      }
+      $("pvPrev").onclick = () => {
+        S.previewIdx =
+          (S.previewIdx - 1 + S.recipients.length) % S.recipients.length;
+        renderPreview();
+      };
+      $("pvNext").onclick = () => {
+        S.previewIdx = (S.previewIdx + 1) % S.recipients.length;
+        renderPreview();
+      };
+
+      function setTab(tab) {
+        S.tab = tab;
+        $("rtPreview").classList.toggle("active", tab === "preview");
+        $("rtStatus").classList.toggle("active", tab === "status");
+        $("viewPreview").classList.toggle("hidden", tab !== "preview");
+        $("viewStatus").classList.toggle("hidden", tab !== "status");
+      }
+      $("rtPreview").onclick = () => setTab("preview");
+      $("rtStatus").onclick = () => setTab("status");
+
+      function validationMessage() {
+        if (!S.tpl) return "Select a template first";
+        if (!S.recipients.length) return "Add at least one valid mobile number";
+        if (allVars().some((v) => !v.value.trim()))
+          return "Fill in or map all template fields";
+        if (needsMedia()) {
+          const u = S.headerUrl.trim();
+          if (!u) return "Enter the header media URL";
+          if (!/^https:\/\//i.test(u))
+            return "Media URL must start with https://";
+        }
+        return null;
+      }
+      function validate() {
+        const msg = validationMessage();
+        $("sendBtn").disabled = !!msg || S.sending;
+        $("sendHint").textContent = S.sending ? "" : msg || "";
+        if (!S.sending)
+          $("sendBtn").textContent =
+            `🚀 Send to ${S.recipients.length} number${S.recipients.length === 1 ? "" : "s"}`;
+      }
+
+      const cnt = (st) => S.results.filter((r) => r.status === st).length;
+
+      function renderStatus() {
+        const total = S.results.length;
+        const sent = cnt("sent"),
+          failed = cnt("failed");
+        const pending = total - sent - failed;
+        const done = sent + failed;
+
+        // tab badge
+        const badge = $("stBadge");
+        if (!total) badge.classList.add("hidden");
+        else {
+          badge.classList.remove("hidden");
+          badge.textContent = `${done}/${total}`;
+          badge.className =
+            "tab-badge" + (S.sending ? " sending" : failed ? " fail" : "");
+        }
+
+        $("stEmpty").classList.toggle("hidden", total > 0);
+        $("stTable").classList.toggle("hidden", total === 0);
+        $("dlFail").classList.toggle("hidden", !failed);
+        $("stClear").classList.toggle("hidden", !total || S.sending);
+
+        $("stTop").innerHTML = total
+          ? `<span class="stat gray"><b>${total}</b> total</span><span class="stat good"><b>${sent}</b> sent</span>` +
+            `<span class="stat bad"><b>${failed}</b> failed</span>` +
+            (pending
+              ? `<span class="stat info"><b>${pending}</b> pending</span>`
+              : "") +
+            (S.sending
+              ? '<span class="stat warn">⏳ Sending…</span>'
+              : '<span class="stat good">✔ Done</span>')
+          : "";
+        $("bar").style.width = total
+          ? Math.round((done / total) * 100) + "%"
+          : "0%";
+
+        const list = S.results.filter((r) => {
+          if (S.filter === "all") return true;
+          if (S.filter === "pending")
+            return r.status === "pending" || r.status === "sending";
+          return r.status === S.filter;
+        });
+        const shown = list.slice(0, MAX_ROWS_SHOWN);
+        $("reportBody").innerHTML =
+          shown
+            .map(
+              (r) =>
+                `<tr><td>${esc(r.number)}</td><td><span class="badge ${r.status}">${r.status === "sent" ? "✔ sent" : r.status === "failed" ? "✖ failed" : r.status === "sending" ? "⏳ sending" : "pending"}</span></td>` +
+                `<td class="muted">${esc(r.status === "sent" ? r.wa_message_id || "" : r.error || "")}</td></tr>`,
+            )
+            .join("") +
+          (list.length > shown.length
+            ? `<tr><td colspan="3" class="muted">+${list.length - shown.length} more rows (download the CSV for the full list)</td></tr>`
+            : "");
+      }
+      $("stFilter").addEventListener("click", (e) => {
+        const b = e.target.closest("button[data-f]");
+        if (!b) return;
+        S.filter = b.dataset.f;
+        $("stFilter")
+          .querySelectorAll("button[data-f]")
+          .forEach((x) => x.classList.toggle("active", x === b));
+        renderStatus();
+      });
+      $("stClear").onclick = () => {
+        S.results = [];
+        renderStatus();
+      };
+
+      function downloadCsv(onlyFailed) {
+        const list = onlyFailed
+          ? S.results.filter((r) => r.status === "failed")
+          : S.results;
+        const csv =
+          "number,status,message_id,error\n" +
+          list
+            .map((r) =>
+              [
+                r.number,
+                r.status,
+                r.wa_message_id || "",
+                (r.error || "").replace(/"/g, '""'),
+              ]
+                .map((c) => `"${c}"`)
+                .join(","),
+            )
+            .join("\n");
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+        a.download = onlyFailed ? "failed-numbers.csv" : "send-report.csv";
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+      $("dlAll").onclick = () => downloadCsv(false);
+      $("dlFail").onclick = () => downloadCsv(true);
+
+      /* ---------- Send ---------- */
+      $("sendBtn").onclick = async () => {
+        if (validationMessage() || S.sending) return;
+        if (
+          !confirm(
+            `Send "${S.tpl.template_name}" to ${S.recipients.length} number${S.recipients.length === 1 ? "" : "s"}?`,
+          )
+        )
+          return;
+
+        S.sending = true;
+        S.filter = "all";
+        $("stFilter")
+          .querySelectorAll("button[data-f]")
+          .forEach((x) => x.classList.toggle("active", x.dataset.f === "all"));
+        S.results = S.recipients.map((r) => ({
+          number: r.phone,
+          status: "pending",
+        }));
+        const idx = new Map(S.results.map((r, i) => [r.number, i]));
+        setTab("status");
+        renderStatus();
+        validate();
+        $("sendBtn").disabled = true;
+
+        const toParam = (v) => ({
+          source: effSource(v),
+          value: v.value.trim(),
+        });
+        const base = {
+          countryCode: S.cc || "91",
+          template: {
+            template_name: S.tpl.template_name,
+            language: S.tpl.language,
+            components: S.tpl.components,
+          },
+          header: needsMedia()
+            ? { type: "link", value: S.headerUrl.trim() }
+            : null,
+          headerParams: S.header.map(toParam),
+          bodyParams: S.body.map(toParam),
+          buttonParams: S.buttons.map((g) => ({
+            index: g.index,
+            params: g.vars.map(toParam),
+          })),
+        };
+
+        const apply = (r) => {
+          const i = idx.get(r.number);
+          if (i === undefined) {
+            idx.set(r.number, S.results.length);
+            S.results.push(r);
+          } else S.results[i] = { ...S.results[i], ...r };
+        };
+
+        for (let i = 0; i < S.recipients.length; i += CHUNK_SIZE) {
+          const chunk = S.recipients.slice(i, i + CHUNK_SIZE);
+          chunk.forEach((r) => {
+            S.results[idx.get(r.phone)].status = "sending";
+          });
+          $("sendBtn").textContent =
+            `Sending… ${Math.min(i + CHUNK_SIZE, S.recipients.length)}/${S.recipients.length}`;
+          renderStatus();
+          try {
+            const res = await fetch(api() + "/send-simple-template", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                ...base,
+                numbers: chunk.map((r) => r.phone),
+                userList:
+                  S.mode === "file"
+                    ? chunk.map((r) => ({ ...r.row, __phone: r.phone }))
+                    : [],
+              }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || "HTTP " + res.status);
+            (data.results || []).forEach(apply);
+            chunk.forEach((r) => {
+              const x = S.results[idx.get(r.phone)];
+              if (x.status === "sending") {
+                x.status = "failed";
+                x.error = "No response from backend for this number";
+              }
+            });
+          } catch (e) {
+            chunk.forEach((r) =>
+              apply({ number: r.phone, status: "failed", error: e.message }),
+            );
+          }
+          renderStatus();
+        }
+
+        S.sending = false;
+        validate();
+        renderStatus();
+      };
+
+      renderFields();
+      renderPreview();
+      renderStatus();
+      validate();
+      loadTemplates();
+    </script>
+  </body>
+</html>
